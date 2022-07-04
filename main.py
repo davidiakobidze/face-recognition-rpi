@@ -1,16 +1,18 @@
-# This is a sample Python script.
+import threading
+import tkinter as tk
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from GUI.GUI import GUI
 
 
-# Press the green button in the gutter to run the script.
+def run():
+    pass
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    # Start GUI
+    gui_object = None
+    root = tk.Tk()
+    gui_object = GUI(root)
+    threading.Thread(target=run).start()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    root.mainloop()
