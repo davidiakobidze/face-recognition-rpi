@@ -5,7 +5,7 @@ from GUI.GUI import GUI
 
 
 def run():
-    pass
+    gui_object.start()
 
 
 if __name__ == '__main__':
