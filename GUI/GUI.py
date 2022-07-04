@@ -21,6 +21,8 @@ class GUI:
         self.root.attributes("-fullscreen", True)
         self.root.config(cursor="none", bg="white")
 
+        self.stop = False
+
         self.end_face_detection = False
         self.is_welcome_screen = False
         self.face_detect_time = None
@@ -38,7 +40,7 @@ class GUI:
         self.first_face_image = None
         self.face_image_width = 1280
         self.face_image_height = 720
-        self.face_searching_time = 10
+        self.face_searching_time = 300
         # Face detection
 
         self.place_labels_list = list()
@@ -58,8 +60,7 @@ class GUI:
         self.place_labels_list = list()
 
     def start(self):
-        while True:
-            self.show_face()
+        self.show_face()
 
     def show_face(self) -> None:
         try:
@@ -69,7 +70,7 @@ class GUI:
             self.is_welcome_screen = False
             self.face_detect_time = None
 
-            self.cap = cv2.VideoCapture(self.usb_camera_index)
+            self.cap = cv2.VideoCapture(0)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.face_image_width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.face_image_height)
 
@@ -79,7 +80,7 @@ class GUI:
             self.face_image = Image.fromarray(frame)
             self.face_photo = get_image(self.face_image)
 
-            self.gui.remove_all()
+            self.remove_all()
             image_width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
             image_height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
@@ -93,9 +94,13 @@ class GUI:
 
             self.root.after(0, self.update_face_frame, False, recognition_end_time)
         except Exception as e:
+            self.close_camera()
+            self.stop = True
             pass
 
     def update_face_frame(self, end_face_detection=False, recognition_end_time=time.time()) -> None:
+        if self.stop:
+            return
         try:
             ret, frame = self.cap.read()
             if ret:
@@ -127,7 +132,7 @@ class GUI:
                     if self.face_detect_time is None:
                         self.face_detect_time = time.time()
 
-                if (end_face_detection and time.time() > self.face_detect_time + 2) or \
+                if (end_face_detection and time.time() > self.face_detect_time + 302) or \
                         time.time() > recognition_end_time:
                     self.end_face_detection = True
                     self.close_camera()
@@ -138,8 +143,7 @@ class GUI:
                 self.face_label.configure(image=self.face_photo)
 
         except Exception as e:
-            self.close_camera()
-            return
+               print("33")
 
         self.root.after(50, self.update_face_frame, end_face_detection, recognition_end_time)
 
