@@ -1,6 +1,5 @@
 import threading
 import tkinter as tk
-import time
 
 from GUI.GUI import GUI
 
@@ -8,8 +7,6 @@ from GUI.GUI import GUI
 def run():
     print("run")
     gui_object.start()
-    while 1:
-        time.sleep(1)
 
 
 if __name__ == '__main__':

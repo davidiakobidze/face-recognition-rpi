@@ -2,11 +2,11 @@ import time
 import tkinter as tk
 
 import cv2
-from PIL import Image
-
+import requests
 from GUI.Label import Lab
 from GUI.default_parameters import WIDTH, HEIGHT
 from GUI.image import get_image
+from PIL import Image
 
 detector = cv2.CascadeClassifier('/home/saboni/rpi/models/haarcascade_frontalface_default.xml')
 FACE_MIN_SIZE = 250
@@ -44,6 +44,13 @@ class GUI:
         # Face detection
 
         self.place_labels_list = list()
+
+        self.label_text = tk.Label(
+            self.root,
+            bg='white',
+            text="",
+            font=("Arial", 60)
+        )
 
     def create_text(self, text: str, x: int, y: int, size: int):
         label = Lab(self, x, y, None, text, size)
@@ -106,6 +113,7 @@ class GUI:
             if ret:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
                 rects = detector.detectMultiScale(
                     gray,
@@ -117,17 +125,20 @@ class GUI:
 
                 for (x, y, w, h) in rects:
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    croped = frame[y:y + h, x:x + w]
+                    cv2.imwrite('detcted.jpg', croped)
 
                 if rects != tuple():
-                    end_face_detection = True
-                    image = cv2.resize(
-                        frame,
-                        (self.face_image_width, self.face_image_height),
-                        interpolation=cv2.INTER_AREA)
 
-                    _, buffer = cv2.imencode('.jpeg', image)
+                    _, buffer = cv2.imencode('.jpeg', frame2)
 
                     self.face_images_list.append(buffer)
+
+                    if len(self.face_images_list) > 10:
+                        self.send_face_images()
+                        return
+                        # return
+                        # self.add_person()
 
                     if self.face_detect_time is None:
                         self.face_detect_time = time.time()
@@ -143,10 +154,39 @@ class GUI:
                 self.face_label.configure(image=self.face_photo)
 
         except Exception as e:
-               print("33")
+            print("33")
+            self.close_camera()
+            raise e
 
-        self.root.after(50, self.update_face_frame, end_face_detection, recognition_end_time)
+        self.root.after(10, self.update_face_frame, end_face_detection, recognition_end_time)
 
     def close_camera(self):
         if self.cap and self.cap.isOpened():
             self.cap.release()
+
+    def send_face_images(self):
+        files = {}
+
+        for i, face_image in enumerate(self.face_images_list):
+            files['file{0}'.format(i)] = face_image
+
+        self.face_images_list = []
+        self.close_camera()
+        self.remove_all()
+        r = requests.post('http://192.168.0.101:3000/recognise', files=files)
+        print(r.text)
+        self.label_text.configure(text=r.text)
+        self.pl(self.label_text, 400, 800)
+        self.root.after(10000, self.show_face)
+
+    def add_person(self):
+        files = {}
+
+        for i, face_image in enumerate(self.face_images_list):
+            files['file{0}'.format(i)] = face_image
+
+        self.face_images_list = []
+
+        files["name"] = "david"
+
+        r = requests.post('http://192.168.0.101:3000/add-person', files=files, data={"name": "david"})
